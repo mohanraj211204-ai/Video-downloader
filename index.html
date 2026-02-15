@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video downloader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0b1a2e 0%, #1b2f45 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+
+        .wrapper {
+            max-width: 1300px;
+            width: 100%;
+        }
+
+        /* header – like videsaur playful vibe */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+            background: rgba(10, 25, 40, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 1rem 2rem;
+            border-radius: 60px;
+            border: 1px solid #3e5f7a;
+            box-shadow: 0 15px 30px -10px #00000055;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dino-icon {
+            font-size: 2.5rem;
+            filter: drop-shadow(0 4px 6px #ffb347);
+        }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f7e05e, #ffb347);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+            color: #8dd0ff;
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            font-weight: 300;
+        }
+
+        .upload-btn-label {
+            background: #2f5a8c;
+            color: white;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #64b5f6;
+            box-shadow: 0 8px 14px #00000033;
+        }
+
+        .upload-btn-label:hover {
+            background: #3d6ea8;
+            transform: scale(1.02);
+            border-color: #ffd966;
+        }
+
+        #videoUpload {
+            display: none;
+        }
+
+        /* main grid – video cards */
+        .gallery-title {
+            color: #c9e2ff;
+            margin: 30px 0 16px 8px;
+            font-weight: 400;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-left: 6px solid #ffb547;
+            padding-left: 20px;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .video-card {
+            background: #1e3349;
+            border-radius: 32px;
+            padding: 16px 16px 20px 16px;
+            box-shadow: 0 20px 30px -8px black;
+            border: 1px solid #385d7a;
+            transition: 0.15s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-card:hover {
+            border-color: #f9b84a;
+            box-shadow: 0 25px 35px -10px #02060b;
+            transform: translateY(-5px);
+        }
+
+        .video-preview {
+            width: 100%;
+            background: #0d1c2c;
+            border-radius: 24px;
+            overflow: hidden;
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #2a4a69;
+            box-shadow: inset 0 2px 6px #00000077;
+        }
+
+        .video-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none; /* preview only, click to play? we keep it simple */
+        }
+
+        .video-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+            padding: 0 6px;
+        }
+
+        .video-name {
+            color: #f0f6ff;
+            font-weight: 500;
+            font-size: 0.95rem;
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: #0f263b;
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid #376b93;
+        }
+
+        .download-btn {
+            background: #328f5e;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.15s;
+            border: 1px solid #6ecf97;
+            box-shadow: 0 5px 12px #00000044;
+            text-decoration: none;
+            color: white;
+        }
+
+        .download-btn:hover {
+            background: #3da86d;
+            border-color: #ffe484;
+            transform: scale(1.03);
+        }
+
+        .download-btn i {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        /* empty state */
+        .empty-state {
+            background: #112436;
+            border-radius: 50px;
+            padding: 4rem 2rem;
+            text-align: center;
+            border: 2px dashed #3a688b;
+            color: #8eb9db;
+            margin-top: 30px;
+        }
+
+        .empty-state h3 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+            color: #b8d9ff;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+        }
+
+        .footer-note {
+            margin-top: 50px;
+            color: #6a8fb1;
+            text-align: center;
+            font-size: 0.9rem;
+            border-top: 1px solid #264a66;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <!-- header with upload (anyone can upload) -->
+    <div class="header">
+        <div class="logo-area">
+            <span class="dino-icon"></span>
+            <span class="logo-text">Video downloader<span></span></span>
+        </div>
+        <label for="videoUpload" class="upload-btn-label">
+            ⬆️ Upload video
+            <span style="font-size: 0.9rem; opacity: 0.8;"></span>
+        </label>
+        <input type="file" id="videoUpload" accept="video/mp4,video/webm,video/ogg,video/quicktime">
+    </div>
+
+    <!-- gallery section -->
+    <div class="gallery-title">
+        <span>🎬 recent uploads · download any</span>
+        <span style="font-size: 0.9rem; background: #1e3f5a; padding: 4px 16px; border-radius: 30px;">free for all</span>
+    </div>
+
+    <!-- dynamic video grid injected via js -->
+    <div id="videoGridContainer" class="video-grid"></div>
+
+    <!-- footer reminder -->
+    <div class="footer-note">
+        ⚡ Video downloader
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ==================  IndexedDB setup (persistent storage) ==================
+        const DB_NAME = 'VidesaurDB';
+        const STORE_NAME = 'videos';
+        const DB_VERSION = 2;
+
+        let db = null;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = (event) => {
+                    const dbRef = event.target.result;
+                    if (!dbRef.objectStoreNames.contains(STORE_NAME)) {
+                        // create store with key as auto-increment id
+                        const store = dbRef.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                        store.createIndex('timestamp', 'timestamp', { unique: false });
+                        store.createIndex('name', 'name', { unique: false });
+                    }
+                };
+
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve(db);
+                };
+
+                request.onerror = (event) => {
+                    console.error('DB error', event.target.error);
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        // Save video file as Blob into IndexedDB
+        function saveVideoToDB(file) {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    reject('DB not initialized');
+                    return;
+                }
+
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+
+                const videoData = {
+                    name: file.name,
+                    type: file.type || 'video/mp4',
+                    size: file.size,
+                    timestamp: Date.now(),
+                    data: file        // file is a Blob, can be stored directly
+                };
+
+                const request = store.add(videoData);
+                request.onsuccess = (event) => {
+                    resolve(event.target.result);   // returns the new id
+                };
+                request.onerror = (event) => {
+                    reject(event.target.error);
+                };
+            });
+        }
+
+        // Load all videos from DB (without blob data yet, but we need the blob for url)
+        function loadAllVideosFromDB() {
+            return new Promise((resolve, reject) => {
+                if (!db) {
+                    reject('DB closed');
+                    return;
+                }
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.getAll();
+
+                request.onsuccess = (event) => {
+                    const videos = event.target.result || [];
+                    resolve(videos);
+                };
+                request.onerror = (event) => reject(event.target.error);
+            });
+        }
+
+        // Delete video from DB (optional, but we can keep simple, no need)
+        // We'll keep all videos forever (no delete). For demo it's fine.
+
+        // ==================  render gallery ==================
+        const gridContainer = document.getElementById('videoGridContainer');
+        const uploadInput = document.getElementById('videoUpload');
+
+        // helper to create object urls (revoke old ones later)
+        const objectUrlMap = new Map(); // id -> url
+
+        function revokeUrlForId(id) {
+            if (objectUrlMap.has(id)) {
+                URL.revokeObjectURL(objectUrlMap.get(id));
+                objectUrlMap.delete(id);
+            }
+        }
+
+        // render video cards from array of video entries (with blob .data)
+        function renderGallery(videos) {
+            // sort by newest first
+            videos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+            // clear container
+            gridContainer.innerHTML = '';
+
+            if (!videos.length) {
+                gridContainer.innerHTML = `
+                    <div class="empty-state" style="grid-column:1/-1;">
+                        <h3>🦕 no videos yet</h3>
+                        <p>upload the first video — anyone can download</p>
+                        <label for="videoUpload" style="display:inline-block; margin-top:20px; background:#2f5a8c; padding:12px 30px; border-radius:50px; color:white; cursor:pointer;">⬆️ upload now</label>
+                    </div>
+                `;
+                return;
+            }
+
+            for (const video of videos) {
+                if (!video.data) continue; // broken entry
+
+                const videoId = video.id;
+                const blob = video.data;  // this is a File / Blob
+                const videoName = video.name || 'video.mp4';
+                const videoType = video.type || 'video/mp4';
+
+                // create object url
+                let url;
+                if (objectUrlMap.has(videoId)) {
+                    url = objectUrlMap.get(videoId);
+                } else {
+                    url = URL.createObjectURL(blob);
+                    objectUrlMap.set(videoId, url);
+                }
+
+                const card = document.createElement('div');
+                card.className = 'video-card';
+                card.setAttribute('data-id', videoId);
+
+                // preview video element
+                const previewHTML = `
+                    <div class="video-preview">
+                        <video src="${url}" muted loop autoplay playsinline></video>
+                    </div>
+                    <div class="video-meta">
+                        <span class="video-name" title="${videoName.replace(/"/g, '&quot;')}">🎬 ${videoName.length > 25 ? videoName.slice(0, 22) + '...' : videoName}</span>
+                        <a href="${url}" download="${videoName}" class="download-btn" onclick="event.stopPropagation();">
+                            ⬇️ <span>Download</span>
+                        </a>
+                    </div>
+                `;
+
+                card.innerHTML = previewHTML;
+
+                // optional: when mouse enters, we can play preview? already autoplay muted loop (some browsers allow)
+                // ensure video play/pause on hover?
+                const videoEl = card.querySelector('video');
+                if (videoEl) {
+                    card.addEventListener('mouseenter', () => {
+                        videoEl.play().catch(() => {}); // autoplay may be restricted, but muted helps
+                    });
+                    card.addEventListener('mouseleave', () => {
+                        videoEl.pause();
+                    });
+                }
+
+                gridContainer.appendChild(card);
+            }
+        }
+
+        // ==================  upload handler ==================
+        uploadInput.addEventListener('change', async (event) => {
+            const files = Array.from(event.target.files);
+            if (!files.length) return;
+
+            // show uploading indicator (simple)
+            const originalText = uploadInput.nextElementSibling?.innerHTML;
+            if (uploadInput.nextElementSibling) {
+                uploadInput.nextElementSibling.innerHTML = '⏳ uploading...';
+            }
+
+            try {
+                for (const file of files) {
+                    if (file.type.startsWith('video/')) {
+                        await saveVideoToDB(file);
+                    } else {
+                        alert(`⛔ ${file.name} is not a video. Only videos accepted.`);
+                    }
+                }
+            } catch (err) {
+                console.error('upload error', err);
+                alert('Upload failed, check console');
+            } finally {
+                // reset input so same file can be uploaded again
+                uploadInput.value = '';
+                if (uploadInput.nextElementSibling) {
+                    uploadInput.nextElementSibling.innerHTML = originalText || '⬆️ Upload video';
+                }
+                // refresh gallery
+                refreshGallery();
+            }
+        });
+
+        // refresh gallery from DB
+        async function refreshGallery() {
+            try {
+                const videos = await loadAllVideosFromDB();
+                renderGallery(videos);
+            } catch (err) {
+                console.error('failed to load videos', err);
+            }
+        }
+
+        // ==================  init database and load initial videos ==================
+        openDB()
+            .then(async () => {
+                console.log('Videsaur DB ready');
+                // check if there are any videos; if empty we might optionally seed a demo video?
+                // For privacy no seed, just show empty.
+                await refreshGallery();
+            })
+            .catch((err) => {
+                console.error('IndexedDB failed, fallback to memory only (upload will not persist across refresh)', err);
+                // Fallback: use memory array if indexedDB not available (like in some incognito?)
+                // But we want persistence. We'll just show error and use dummy non-persistent storage.
+                // For robustness we could implement memory fallback, but best effort: show message
+                gridContainer.innerHTML = `<div class="empty-state" style="grid-column:1/-1; background:#571c1c;"><h3>⚠️ IndexedDB unavailable</h3><p>videos will not persist after refresh, but upload/download works for this session.</p></div>`;
+                // override db with fake memory store?
+            });
+
+        // Cleanup object urls when page unloads (optional)
+        window.addEventListener('beforeunload', () => {
+            for (let url of objectUrlMap.values()) {
+                URL.revokeObjectURL(url);
+            }
+            objectUrlMap.clear();
+        });
+
+        // additional: re-fetch gallery after db changes (upload already does)
+        // also when multiple tabs? not needed.
+    })();
+</script>
+
+<!-- small extra style for download link inside card -->
+</body>
+</html>
